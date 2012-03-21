@@ -132,7 +132,9 @@
                          (or (<= (point) start) ;; modified
                              (>= (mark) end))
                          (> (- (mark) (point)) (- end start))
-                         (< (- (mark) (point)) (- best-end best-start)))
+                         (or (< (- (mark) (point)) (- best-end best-start))
+                             (and (= (- (mark) (point)) (- best-end best-start))
+                                  (not (= (point) best-start)))))
                 (setq best-start (point))
                 (setq best-end (mark))
                 (unless (minibufferp)
