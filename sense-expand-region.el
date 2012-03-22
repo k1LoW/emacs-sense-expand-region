@@ -17,7 +17,7 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
-;; Version: 0.0.2
+;; Version: 0.0.3
 ;; Author: k1LoW (Kenichirou Oyama), <k1lowxb [at] gmail [dot] com> <k1low [at] 101000lab [dot] org>
 ;; URL: http://code.101000lab.org
 
@@ -67,12 +67,12 @@
       (ser/sense-expand-region arg)
     (let* ((p1 (point))
            (p2 (if (use-region-p) (mark) (point))))
-    (setq sense-expand-region-before-start (min p1 p2))
-    (setq sense-expand-region-before-end (max p1 p2))
-    (if (not (region-active-p))
-        (set-mark (point))
-      (setq sense-expand-region-status 'rectangle)
-      (inline-string-rectangle)))))
+      (setq sense-expand-region-before-start (min p1 p2))
+      (setq sense-expand-region-before-end (max p1 p2))
+      (if (not (region-active-p))
+          (set-mark (point))
+        (setq sense-expand-region-status 'rectangle)
+        (inline-string-rectangle)))))
 
 ;;;###autoload
 (defun ser/sense-expand-region (arg)
@@ -158,37 +158,54 @@
   (if (or (not sense-expand-region-status) (not mm/mirrors))
       ad-do-it
     (ser/kill-new))
-    (setq sense-expand-region-status nil))
+  (setq sense-expand-region-status nil))
 (ad-enable-advice 'kill-ring-save 'around 'sense-expand-region-kill-ring-save)
 (ad-activate 'kill-ring-save)
 
 (defadvice kill-region (around sense-expand-region-kill-region disable)
-  (unless (or (not sense-expand-region-status) (not mm/mirrors))
-    (ser/kill-new))
-  ad-do-it
-    (setq sense-expand-region-status nil))
+  (if (or (not sense-expand-region-status) (not mm/mirrors))
+      ad-do-it
+    (ser/kill-region))
+  (setq sense-expand-region-status nil))
 (ad-enable-advice 'kill-region 'around 'sense-expand-region-kill-region)
 (ad-activate 'kill-region)
 
 (defun ser/mark-whole-line ()
   (interactive)
-    (set-mark (save-excursion
-                (end-of-line)
-                (point)))
-      (back-to-indentation))
+  (set-mark (save-excursion
+              (end-of-line)
+              (point)))
+  (back-to-indentation))
 
 (defun ser/kill-new ()
   (let ((killed-text "") (mirrors mm/mirrors) (first t))
     (if (> (overlay-start (car mirrors)) (overlay-start mm/master))
         (setq mirrors (append (list mm/master) (reverse mirrors)))
       (setq mirrors (append mirrors (list mm/master))))
-      (dolist (mirror mirrors)
-        (setq killed-text (concat
-                           killed-text
-                           (unless first "\n")
-                           (buffer-substring (overlay-start mirror) (overlay-end mirror))))
-        (setq first nil))
-      (kill-new killed-text)
-      (mm/deactivate-region-and-clear-all)))
+    (dolist (mirror mirrors)
+      (setq killed-text (concat
+                         killed-text
+                         (unless first "\n")
+                         (buffer-substring (overlay-start mirror) (overlay-end mirror))))
+      (setq first nil))
+    (kill-new killed-text)
+    (mm/deactivate-region-and-clear-all)))
+
+(defun ser/kill-region ()
+  (let ((killed-text "") (mirrors mm/mirrors) (first t))
+    (if (> (overlay-start (car mirrors)) (overlay-start mm/master))
+        (setq mirrors (append (list mm/master) (reverse mirrors)))
+      (setq mirrors (append mirrors (list mm/master))))
+    (dolist (mirror mirrors)
+      (setq killed-text (concat
+                         killed-text
+                         (unless first "\n")
+                         (buffer-substring (overlay-start mirror) (overlay-end mirror))))
+      (setq first nil))
+    (dolist (mirror (reverse mirrors))
+      (delete-region (overlay-start mirror) (overlay-end mirror))
+      (setq first nil))
+    (kill-new killed-text)
+    (mm/deactivate-region-and-clear-all)))
 
 (provide 'sense-expand-region)
