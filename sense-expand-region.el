@@ -17,7 +17,7 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
-;; Version: 0.0.3
+;; Version: 0.0.4
 ;; Author: k1LoW (Kenichirou Oyama), <k1lowxb [at] gmail [dot] com> <k1low [at] 101000lab [dot] org>
 ;; URL: http://code.101000lab.org
 
@@ -50,9 +50,8 @@
 (require 'expand-region)
 (require 'inline-string-rectangle)
 
-(setq er/try-expand-list (append
-                          er/try-expand-list
-                          '(ser/mark-whole-line)))
+(add-to-list 'er/try-expand-list 'ser/mark-whole-line)
+(add-to-list 'er/try-expand-list 'ser/mark-forward)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Variable ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar sense-expand-region-status nil)
@@ -118,6 +117,7 @@
           (skip-chars-forward er--space-str)
           (setq start (point)))
 
+        ;; check longest-*
         (while try-list
           (save-excursion
             (goto-char sense-expand-region-before-start)
@@ -126,19 +126,37 @@
               (funcall (car try-list))
               (when (> (- (mark) (point)) (- longest-end longest-start))
                 (setq longest-start (point))
-                (setq longest-end (mark)))
+                (setq longest-end (mark))))
+            (setq try-list (cdr try-list))))
 
-              (when (and (region-active-p)
-                         (or (<= (point) start) ;; modified
-                             (>= (mark) end))
-                         (> (- (mark) (point)) (- end start))
-                         (or (< (- (mark) (point)) (- best-end best-start))
-                             (and (= (- (mark) (point)) (- best-end best-start))
-                                  (not (= (point) best-start)))))
-                (setq best-start (point))
-                (setq best-end (mark))
-                (unless (minibufferp)
-                  (message "%S" (car try-list))))))
+        (setq try-list er/try-expand-list)
+
+        (while try-list
+          (save-excursion
+            (goto-char sense-expand-region-before-start)
+            (set-mark sense-expand-region-before-end)
+            (setq prev-mark (mark))
+            (setq prev-point (point))
+            (ignore-errors
+              (while (< (- (mark) (point)) (- longest-end longest-start))
+                (funcall (car try-list))
+                (if (and (= prev-mark (mark)) (= prev-point (point)))
+                    (progn
+                      (goto-char longest-start)
+                      (set-mark longest-end)
+                      return))
+
+                (when (and (region-active-p)
+                           (or (<= (point) start) ;; modified
+                               (>= (mark) end))
+                           (> (- (mark) (point)) (- end start))
+                           (< (- (mark) (point)) (- best-end best-start)))
+                  (setq best-start (point))
+                  (setq best-end (mark))
+                  (unless (minibufferp)
+                    (message "%S" (car try-list))))
+                (setq prev-mark (mark))
+                (setq prev-point (point)))))
           (setq try-list (cdr try-list)))
 
         (goto-char best-start)
@@ -176,6 +194,22 @@
               (end-of-line)
               (point)))
   (back-to-indentation))
+
+(defun ser/mark-forward ()
+  (interactive)
+  (let (line-end)
+    (save-excursion
+      (end-of-line)
+      (setq line-end (point)))
+    (set-mark (save-excursion
+                (unless (not (region-active-p))
+                  (goto-char (region-end))
+                  (goto-char (+ (point) 1)))
+                (re-search-forward "[\s(\s)\>]" nil t)
+                (goto-char (- (point) 1))
+                (unless (> line-end (point))
+                  (goto-char line-end))
+                (point)))))
 
 (defun ser/kill-new ()
   (let ((killed-text "") (mirrors mm/mirrors) (first t))
