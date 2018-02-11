@@ -173,7 +173,9 @@
 
 ;;;###autoload
 (defun ser/sense-edit-lines (s e)
-  "Edit multiple lines."
+  "Edit multiple lines.
+If S `current-column` = E `current-column`, call `mc/edit-lines`.
+If S `current-column` != E `current-column`, call `rectangle-mark-mode`."
   (if (eq (save-excursion (goto-char s) (current-column))
           (save-excursion (goto-char e) (current-column)))
       (call-interactively 'mc/edit-lines)
