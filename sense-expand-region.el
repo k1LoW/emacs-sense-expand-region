@@ -17,10 +17,10 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
-;; Version: 0.0.5
+;; Version: 0.0.6
 ;; Author: k1LoW (Kenichirou Oyama), <k1lowxb [at] gmail [dot] com> <k1low [at] 101000lab [dot] org>
 ;; URL: http://code.101000lab.org
-;; Package-Requires: ((expand-region "0.11.0"))
+;; Package-Requires: ((expand-region "0.11.0") (multiple-cursors "1.4.0"))
 
 ;;; Reference
 ;; Some code referenced from expand-region.el
@@ -51,6 +51,7 @@
 
 ;; require
 (require 'expand-region)
+(require 'multiple-cursors)
 
 (add-to-list 'er/try-expand-list 'ser/mark-whole-line)
 (add-to-list 'er/try-expand-list 'ser/mark-forward)
@@ -71,7 +72,7 @@
       (setq sense-expand-region-before-end (max p1 p2))
       (if (not (region-active-p))
           (set-mark (point))
-        nil))))
+        (ser/sense-edit-lines sense-expand-region-before-start sense-expand-region-before-end)))))
 
 ;;;###autoload
 (defun ser/sense-expand-region (arg)
@@ -169,6 +170,16 @@
         (when (and (= best-start 0)
                    (= best-end (buffer-end 1))) ;; We didn't find anything new, so exit early
           (setq arg 0))))))
+
+;;;###autoload
+(defun ser/sense-edit-lines (s e)
+  "Edit multiple lines.
+If S `current-column` = E `current-column`, call `mc/edit-lines`.
+If S `current-column` != E `current-column`, call `rectangle-mark-mode`."
+  (if (eq (save-excursion (goto-char s) (current-column))
+          (save-excursion (goto-char e) (current-column)))
+      (call-interactively 'mc/edit-lines)
+    (call-interactively 'rectangle-mark-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utilities Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun ser/mark-whole-line ()
