@@ -177,7 +177,7 @@
   (if (eq (save-excursion (goto-char s) (current-column))
           (save-excursion (goto-char e) (current-column)))
       (call-interactively 'mc/edit-lines)
-    nil))
+    (call-interactively 'rectangle-mark-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utilities Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun ser/mark-whole-line ()
