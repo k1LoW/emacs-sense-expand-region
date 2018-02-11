@@ -20,6 +20,7 @@
 ;; Version: 0.0.5
 ;; Author: k1LoW (Kenichirou Oyama), <k1lowxb [at] gmail [dot] com> <k1low [at] 101000lab [dot] org>
 ;; URL: http://code.101000lab.org
+;; Package-Requires: ((expand-region "0.11.0"))
 
 ;;; Reference
 ;; Some code referenced from expand-region.el
@@ -38,7 +39,7 @@
 ;;
 ;; This package is 'sense-region.el like' expand-region.el wrapper.
 ;;
-;; (/ (+ sense-region.el expand-region.el inline-string-rectangle) 5) ;=> sense-expand-region.el !!
+;; (/ (+ sense-region.el expand-region.el) 2) ;=> sense-expand-region.el !!
 ;;
 ;; sense-region.el
 ;; http://www.taiyaki.org/elisp/sense-region/
@@ -60,6 +61,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Interactive Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun sense-expand-region (arg)
+  "Sense `er/expand-region'.  if ARG negative, contract region."
   (interactive "p")
   (if (eq last-command this-command)
       (ser/sense-expand-region arg)
@@ -73,8 +75,7 @@
 
 ;;;###autoload
 (defun ser/sense-expand-region (arg)
-  "Sense `er/expand-region'."
-  (interactive "p")
+  "Sense `er/expand-region'.  if ARG negative, contract region."
   (if (< arg 1)
       ;; `er/contract-region' will take care of negative and 0 arguments
       (er/contract-region (- arg))
@@ -171,6 +172,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utilities Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun ser/mark-whole-line ()
+  "Mark whole-line."
   (interactive)
   (set-mark (save-excursion
               (end-of-line)
@@ -178,6 +180,7 @@
   (back-to-indentation))
 
 (defun ser/mark-forward ()
+  "Mark forward."
   (interactive)
   (let (line-end)
     (save-excursion
@@ -194,3 +197,4 @@
                 (point)))))
 
 (provide 'sense-expand-region)
+;;; sense-expand-region.el ends here
